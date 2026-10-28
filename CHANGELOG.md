@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `github-release.mjs` options `--install`, `--install-lang`, `--link` and `--link-label` add an Install block above the release notes. `release-maven` uses them to show the Gradle dependency line and the Maven Central link.
+
 ## [0.1.1] - 2026-10-28
 
 ### Added

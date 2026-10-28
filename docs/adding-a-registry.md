@@ -26,7 +26,7 @@ skills/
 |---|---|
 | `git-preflight.mjs` | clean tree, branch, tag absent |
 | `changelog.mjs` | changelog entry from commits since the last tag |
-| `github-release.mjs` | GitHub release from the changelog section |
+| `github-release.mjs` | GitHub release from the changelog section, with an optional Install block (`--install`, `--install-lang`, `--link`, `--link-label`), for example `--install 'npx mypkg@1.2.0'` for npm |
 | `state.mjs` | resumable progress in `build/release-agent/state.json` |
 | `lib/http.mjs` | fetch with timeout, retries and backoff |
 | `lib/properties.mjs` | `.properties` parsing |

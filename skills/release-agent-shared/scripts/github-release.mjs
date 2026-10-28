@@ -17,6 +17,15 @@ export function extractSection(changelogText, version) {
   return lines.slice(start + 1, end).filter((l) => !/^\[[^\]]+\]:\s*\S+/.test(l)).join('\n').trim();
 }
 
+/** Optional "### Install" block placed above the changelog notes. */
+export function installSection({ install = [], lang = 'sh', link, linkLabel } = {}) {
+  if (install.length === 0 && !link) return '';
+  let out = '### Install\n\n';
+  if (install.length) out += `\`\`\`${lang}\n${install.join('\n')}\n\`\`\`\n\n`;
+  if (link) out += `${linkLabel ? `${linkLabel}: ` : ''}${link}\n\n`;
+  return out;
+}
+
 function ghStatus() {
   try {
     execFileSync('gh', ['--version'], { stdio: 'ignore' });
@@ -33,12 +42,13 @@ function ghStatus() {
 
 const quote = (s) => (/^[\w./:@-]+$/.test(s) ? s : `'${s.replace(/'/g, `'\\''`)}'`);
 
-export function githubRelease({ cwd = '.', tag, version, changelogPath, title, draft = false, create = false }) {
+export function githubRelease({ cwd = '.', tag, version, changelogPath, title, draft = false, create = false, install = [], installLang = 'sh', link, linkLabel }) {
   const file = join(cwd, changelogPath);
   if (!existsSync(file)) return result([check('release.changelog', 'fail', `${changelogPath} not found`)]);
-  const notes = extractSection(readFileSync(file, 'utf8'), version);
-  if (!notes) return result([check('release.changelog', 'fail', `No section for ${version} in ${changelogPath}`, { fix: 'Run changelog.mjs first.' })]);
+  const section = extractSection(readFileSync(file, 'utf8'), version);
+  if (!section) return result([check('release.changelog', 'fail', `No section for ${version} in ${changelogPath}`, { fix: 'Run changelog.mjs first.' })]);
 
+  const notes = `${installSection({ install, lang: installLang, link, linkLabel })}${section}`;
   const notesDir = join(cwd, 'build', 'release-agent');
   mkdirSync(notesDir, { recursive: true });
   const notesFile = join(notesDir, `release-notes-${version}.md`);
@@ -67,16 +77,23 @@ export function githubRelease({ cwd = '.', tag, version, changelogPath, title, d
   }
 }
 
-const usage = 'Usage: github-release.mjs --tag <tag> --version <version> [--changelog CHANGELOG.md] [--title <title>] [--draft] [--create] [--cwd <dir>]';
+const usage = `Usage: github-release.mjs --tag <tag> --version <version> [--changelog CHANGELOG.md] [--title <title>]
+         [--install <line> ...] [--install-lang sh] [--link <url>] [--link-label <label>]
+         [--draft] [--create] [--cwd <dir>]
+  --install adds an "### Install" code block above the notes (repeat for several lines).`;
 
 await runCli(import.meta.url, {
   usage,
   options: {
     tag: { type: 'string' }, version: { type: 'string' }, changelog: { type: 'string', default: 'CHANGELOG.md' },
     title: { type: 'string' }, draft: { type: 'boolean', default: false }, create: { type: 'boolean', default: false },
-    cwd: { type: 'string', default: '.' },
+    cwd: { type: 'string', default: '.' }, install: { type: 'string', multiple: true }, 'install-lang': { type: 'string', default: 'sh' },
+    link: { type: 'string' }, 'link-label': { type: 'string' },
   },
 }, (v) => {
   required(v, 'tag', 'version');
-  return githubRelease({ cwd: v.cwd, tag: v.tag, version: v.version, changelogPath: v.changelog, title: v.title, draft: v.draft, create: v.create });
+  return githubRelease({
+    cwd: v.cwd, tag: v.tag, version: v.version, changelogPath: v.changelog, title: v.title, draft: v.draft, create: v.create,
+    install: v.install ?? [], installLang: v['install-lang'], link: v.link, linkLabel: v['link-label'],
+  });
 });

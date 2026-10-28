@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { classify, buildEntry, insertEntry, changelog } from '../skills/release-agent-shared/scripts/changelog.mjs';
 import { gitPreflight } from '../skills/release-agent-shared/scripts/git-preflight.mjs';
 import { updateState, readState } from '../skills/release-agent-shared/scripts/state.mjs';
-import { extractSection, githubRelease } from '../skills/release-agent-shared/scripts/github-release.mjs';
+import { extractSection, githubRelease, installSection } from '../skills/release-agent-shared/scripts/github-release.mjs';
 import { tempDir, gitRepo } from './support/helpers.mjs';
 
 test('classify maps conventional commits to Keep a Changelog sections', () => {
@@ -97,4 +97,18 @@ test('changelog follows an existing "## X.Y.Z (date)" style and inserts above th
   assert.match(text, /Intro text\.\n\n## 0\.4\.0 \(2026-10-28\)\n\n### Fixed\n\n- Handle denial\n\n## 0\.3\.0 \(2026-10-23\)/);
   assert.equal(extractSection(text, '0.4.0'), '### Fixed\n\n- Handle denial');
   assert.equal(extractSection(text, '0.3.0'), '### Breaking changes\n\n- Old');
+});
+
+test('github-release puts an Install block above the notes when asked', () => {
+  assert.equal(installSection(), '');
+  assert.equal(installSection({ link: 'https://x', linkLabel: 'npm' }), '### Install\n\nnpm: https://x\n\n');
+  const dir = tempDir();
+  writeFileSync(join(dir, 'CHANGELOG.md'), '## [1.0.2] - 2026-10-28\n\n### Fixed\n\n- A bug\n');
+  const r = githubRelease({
+    cwd: dir, tag: 'v1.0.2', version: '1.0.2', changelogPath: 'CHANGELOG.md',
+    install: ['implementation("io.github.example:lib:1.0.2")'], installLang: 'kotlin',
+    link: 'https://central.sonatype.com/artifact/io.github.example/lib/1.0.2', linkLabel: 'Maven Central',
+  });
+  assert.equal(r.data.notes, '### Install\n\n```kotlin\nimplementation("io.github.example:lib:1.0.2")\n```\n\nMaven Central: https://central.sonatype.com/artifact/io.github.example/lib/1.0.2\n\n### Fixed\n\n- A bug');
+  assert.equal(readFileSync(r.data.notesFile, 'utf8'), `${r.data.notes}\n`);
 });

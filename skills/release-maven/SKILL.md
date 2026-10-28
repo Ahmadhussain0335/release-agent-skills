@@ -181,7 +181,13 @@ Ask before each outward-facing step. With release path `ci`, skip what the workf
 
 1. Tag the release commit: `git tag -a <tag> -m "Release <new>"`.
 2. Push: `git push origin <branch>` and `git push origin <tag>`. If the branch is protected, explain that the release commit has to go in through a pull request, and push only the tag.
-3. GitHub release: `node "$SKILL_DIR/../release-agent-shared/scripts/github-release.mjs" --tag <tag> --version <new> --changelog CHANGELOG.md`. Without `--create` it only prints the command and writes the notes file. Show it, and after the user agrees, run it again with `--create`. If `gh` is missing or not logged in, it says so and the user runs the command.
+3. GitHub release:
+   ```sh
+   node "$SKILL_DIR/../release-agent-shared/scripts/github-release.mjs" --tag <tag> --version <new> --changelog CHANGELOG.md \
+     --install 'implementation("<g>:<a>:<new>")' --install-lang kotlin \
+     --link "https://central.sonatype.com/artifact/<g>/<a>/<new>" --link-label "Maven Central"
+   ```
+   Repeat `--install` for each published module. The notes then start with an Install block. Without `--create` it only prints the command and writes the notes file. Show it, and after the user agrees, run it again with `--create`. If `gh` is missing or not logged in, it says so and the user runs the command.
 
 Finish with a short report: coordinates, version, deployment ID, Maven Central URL, tag and GitHub release URL. Then run `state.mjs set phase=done`.
 
