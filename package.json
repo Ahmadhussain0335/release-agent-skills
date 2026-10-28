@@ -1,0 +1,47 @@
+{
+  "name": "release-agent-skills",
+  "version": "0.1.0",
+  "description": "AI agent skills that publish libraries safely. v0.1: Maven Central through the Sonatype Central Portal, with pre-flight checks, approval gates and manual release by default.",
+  "type": "module",
+  "bin": {
+    "release-agent-skills": "bin/release-agent-skills.mjs"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "skills/",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "prepublishOnly": "npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "agent-skills",
+    "claude-code",
+    "cursor",
+    "codex",
+    "maven-central",
+    "sonatype",
+    "central-portal",
+    "gradle",
+    "kotlin-multiplatform",
+    "release",
+    "publishing"
+  ],
+  "author": "Ahmad Hussain <ahmadhussain0335@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ahmadhussain0335/release-agent-skills.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Ahmadhussain0335/release-agent-skills/issues"
+  },
+  "homepage": "https://github.com/Ahmadhussain0335/release-agent-skills#readme"
+}
