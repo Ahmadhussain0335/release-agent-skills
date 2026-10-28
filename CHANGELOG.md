@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-28
+
 ### Added
 
 - `skip-signing.init.gradle.kts` and an `--unsigned-expected` flag for `inspect-artifacts.mjs` and `verify-signatures.mjs`, so check-only runs work on machines without signing keys when the keys live in CI. Missing signatures are then reported as warnings while POMs, sources, javadoc and KMP targets are still checked.

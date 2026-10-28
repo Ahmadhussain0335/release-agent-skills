@@ -1,6 +1,6 @@
 {
   "name": "release-agent-skills",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI agent skills that publish libraries safely. v0.1: Maven Central through the Sonatype Central Portal, with pre-flight checks, approval gates and manual release by default.",
   "type": "module",
   "bin": {
