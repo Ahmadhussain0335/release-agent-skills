@@ -57,7 +57,7 @@ export async function keyOnKeyserver(issuer, fetchImpl = fetch) {
   return servers;
 }
 
-export async function verifySignatures({ repo, version, useGpg = gpgAvailable(), checkKeyserver = true, fetchImpl = fetch, verify = gpgVerify }) {
+export async function verifySignatures({ repo, version, useGpg = gpgAvailable(), checkKeyserver = true, unsignedExpected = false, fetchImpl = fetch, verify = gpgVerify }) {
   const checks = [];
   const files = walk(repo).filter((f) => !isAuxiliary(basename(f)) && (!version || f.split(sep).includes(version)));
   if (files.length === 0) return result([check('signatures.files', 'fail', `No artifacts found in ${repo}`)]);
@@ -76,9 +76,10 @@ export async function verifySignatures({ repo, version, useGpg = gpgAvailable(),
       unreadable.push(`${relative(repo, f)}.asc (${err.message})`);
     }
   }
-  checks.push(unsigned.length
-    ? check('signatures.present', 'fail', `${unsigned.length} of ${files.length} file(s) have no .asc`, { files: unsigned.slice(0, 30), fix: 'errors.md E06.' })
-    : check('signatures.present', 'pass', `All ${files.length} file(s) have a .asc signature`));
+  if (!unsigned.length) checks.push(check('signatures.present', 'pass', `All ${files.length} file(s) have a .asc signature`));
+  else if (unsignedExpected) checks.push(check('signatures.present', 'warn', `${unsigned.length} of ${files.length} file(s) unsigned, as expected: signing runs in CI. Signatures are checked by the Portal on upload.`));
+  else checks.push(check('signatures.present', 'fail', `${unsigned.length} of ${files.length} file(s) have no .asc`, { files: unsigned.slice(0, 30), fix: 'errors.md E06.' }));
+  if (issuers.size === 0 && unreadable.length === 0) return result(checks, { fileCount: files.length, keys: [] });
   if (unreadable.length) checks.push(check('signatures.format', 'fail', `${unreadable.length} signature file(s) could not be parsed`, { files: unreadable.slice(0, 30) }));
   if (issuers.size > 1) checks.push(check('signatures.issuer', 'warn', `Files are signed by ${issuers.size} different keys`, { fix: 'Usually a mix of primary key and subkey, or two configured keys. See reference/signing-setup.md.' }));
 
@@ -115,9 +116,9 @@ export async function verifySignatures({ repo, version, useGpg = gpgAvailable(),
 }
 
 await runCli(import.meta.url, {
-  usage: 'Usage: verify-signatures.mjs --repo <dir> [--version <version>] [--no-gpg] [--no-keyserver]',
-  options: { repo: { type: 'string' }, version: { type: 'string' }, 'no-gpg': { type: 'boolean', default: false }, 'no-keyserver': { type: 'boolean', default: false } },
+  usage: 'Usage: verify-signatures.mjs --repo <dir> [--version <version>] [--no-gpg] [--no-keyserver] [--unsigned-expected]',
+  options: { repo: { type: 'string' }, version: { type: 'string' }, 'no-gpg': { type: 'boolean', default: false }, 'no-keyserver': { type: 'boolean', default: false }, 'unsigned-expected': { type: 'boolean', default: false } },
 }, (v) => {
   required(v, 'repo');
-  return verifySignatures({ repo: v.repo, version: v.version, useGpg: v['no-gpg'] ? false : gpgAvailable(), checkKeyserver: !v['no-keyserver'] });
+  return verifySignatures({ repo: v.repo, version: v.version, useGpg: v['no-gpg'] ? false : gpgAvailable(), checkKeyserver: !v['no-keyserver'], unsignedExpected: v['unsigned-expected'] });
 });

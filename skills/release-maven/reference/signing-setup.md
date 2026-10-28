@@ -38,6 +38,8 @@ Pick one. `check-credentials.mjs` reports which one it found, by property name o
 
 ### 1. In-memory key (recommended, works for local and CI)
 
+This is the only setup that needs no `gpg` on the machine that builds. Use it when `check-credentials.mjs` reports `gpgInstalled: false`. Exporting the key once requires `gpg` on some machine (or an existing CI secret holding the armored key).
+
 | Gradle property | Environment variable | Notes |
 |---|---|---|
 | `signingInMemoryKey` | `ORG_GRADLE_PROJECT_signingInMemoryKey` | ASCII-armored private key |

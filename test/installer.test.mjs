@@ -22,6 +22,7 @@ test('install copies the skill and the shared folder, and installed scripts run'
   assert.deepEqual(report.map((r) => [r.folder, r.action]), [['release-maven', 'installed'], ['release-agent-shared', 'installed']]);
   assert.ok(existsSync(join(dest, 'release-maven', 'SKILL.md')));
   assert.ok(existsSync(join(dest, 'release-maven', 'reference', 'central-portal.md')));
+  assert.ok(existsSync(join(dest, 'release-maven', 'scripts', 'skip-signing.init.gradle.kts')));
   // Relative imports into release-agent-shared must resolve from the installed layout.
   const out = spawnSync(process.execPath, [join(dest, 'release-maven', 'scripts', 'check-version.mjs'), '--group', 'g'], { encoding: 'utf8' });
   assert.equal(out.status, 2);

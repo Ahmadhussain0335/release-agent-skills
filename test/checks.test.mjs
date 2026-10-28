@@ -115,3 +115,30 @@ test('check-version treats a SNAPSHOT current version as the development line', 
   const patch = await checkVersion({ group: 'g', artifact: 'a', version: '0.3.1', current: '0.4.0-SNAPSHOT', fetchImpl: none });
   assert.equal(patch.checks.find((c) => c.id === 'version.order').status, 'warn');
 });
+
+// Keys only in CI: artifacts staged with skip-signing.init.gradle.kts have no .asc files.
+test('--unsigned-expected reports missing signatures as warnings', async () => {
+  const omit = ['jvm', 'iosarm64'].flatMap((t) => [`lib-${t}-1.0.2.pom`, `lib-${t}-1.0.2.module`, `lib-${t}-1.0.2.jar`, `lib-${t}-1.0.2.klib`, `lib-${t}-1.0.2-sources.jar`, `lib-${t}-1.0.2-javadoc.jar`].map((f) => `${f}.asc`))
+    .concat(['lib-1.0.2.pom', 'lib-1.0.2.module', 'lib-1.0.2.jar', 'lib-1.0.2-sources.jar', 'lib-1.0.2-javadoc.jar'].map((f) => `${f}.asc`));
+  const repo = stagedKmpRepo({ omit });
+
+  const strict = inspectArtifacts({ repo, group: 'io.github.example', version: '1.0.2' });
+  assert.equal(strict.ok, false);
+  const relaxed = inspectArtifacts({ repo, group: 'io.github.example', version: '1.0.2', unsignedExpected: true });
+  assert.equal(relaxed.ok, true, JSON.stringify(relaxed.checks));
+  assert.ok(relaxed.checks.some((c) => c.id === 'artifacts.lib.signatures' && c.status === 'warn'));
+
+  const network = fakeFetch(() => ({ status: 200 }));
+  const sigs = await verifySignatures({ repo, useGpg: false, unsignedExpected: true, fetchImpl: network });
+  assert.equal(sigs.ok, true);
+  assert.equal(sigs.checks[0].status, 'warn');
+  assert.equal(network.calls.length, 0);
+});
+
+test('check-credentials points to the in-memory key when gpg is not installed', () => {
+  const r = checkCredentials({ projectDir: writeTree(tempDir(), { 'build.gradle.kts': '' }), env: {}, home: tempDir(), gpgCount: () => null, hasGpg: () => false });
+  const signing = r.checks.find((c) => c.id === 'credentials.signing');
+  assert.match(signing.message, /gpg is not installed/);
+  assert.match(signing.fix, /signingInMemoryKey/);
+  assert.equal(r.data.gpgInstalled, false);
+});

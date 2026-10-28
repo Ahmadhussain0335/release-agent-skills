@@ -18,6 +18,15 @@ function usesGpgCmd(projectDir) {
   return dirs.some((d) => files.some((f) => existsSync(join(d, f)) && /useGpgCmd\s*\(/.test(readFileSync(join(d, f), 'utf8'))));
 }
 
+function gpgInstalled() {
+  try {
+    execFileSync('gpg', ['--version'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function gpgSecretKeyCount() {
   try {
     const out = execFileSync('gpg', ['--batch', '--list-secret-keys', '--with-colons'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
@@ -27,7 +36,7 @@ function gpgSecretKeyCount() {
   }
 }
 
-export function checkCredentials({ setup = 'any', projectDir = '.', env = process.env, home, gpgCount = gpgSecretKeyCount } = {}) {
+export function checkCredentials({ setup = 'any', projectDir = '.', env = process.env, home, gpgCount = gpgSecretKeyCount, hasGpg = gpgInstalled } = {}) {
   if (!['vanniktech', 'maven-publish', 'any'].includes(setup)) throw new UsageError(`Unknown setup "${setup}"`);
   const sources = credentialSources({ projectDir, env, home });
   const checks = [];
@@ -68,9 +77,14 @@ export function checkCredentials({ setup = 'any', projectDir = '.', env = proces
     if (count) signing.push(`gpg agent (useGpgCmd, ${count} secret key(s) in the local keyring)`);
     else checks.push(check('credentials.gpg', 'fail', 'The build uses useGpgCmd() but gpg has no secret keys or is not installed', { fix: 'See reference/signing-setup.md.' }));
   }
+  const gpg = hasGpg();
   checks.push(signing.length
     ? check('credentials.signing', 'pass', `Signing configured: ${signing.join('; ')}`)
-    : check('credentials.signing', 'fail', 'No signing configuration found', { fix: 'Configure one of the setups in reference/signing-setup.md (errors.md E11).' }));
+    : check('credentials.signing', 'fail', `No signing configuration found${gpg ? '' : ' (gpg is not installed)'}`, {
+      fix: gpg
+        ? 'Configure one of the setups in reference/signing-setup.md (errors.md E11).'
+        : 'Use the in-memory key setup (signingInMemoryKey, signingInMemoryKeyPassword); it needs no gpg on this machine. See reference/signing-setup.md (errors.md E11).',
+    }));
 
   // Secrets must not sit in files that are committed.
   for (const key of SECRET_KEYS) {
@@ -84,7 +98,7 @@ export function checkCredentials({ setup = 'any', projectDir = '.', env = proces
     }
   }
 
-  return result(checks, { keys: Object.values(report).map(({ key, found, source }) => ({ key, found, source })) });
+  return result(checks, { gpgInstalled: gpg, keys: Object.values(report).map(({ key, found, source }) => ({ key, found, source })) });
 }
 
 await runCli(import.meta.url, {

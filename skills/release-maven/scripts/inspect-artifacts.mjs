@@ -15,7 +15,7 @@ function moduleTargets(dir, artifactId, version) {
   return [...new Set((meta.variants ?? []).map((v) => v['available-at']?.module).filter(Boolean))];
 }
 
-export function inspectArtifacts({ repo, group, version, expected = [] }) {
+export function inspectArtifacts({ repo, group, version, expected = [], unsignedExpected = false }) {
   const checks = [];
   const components = listComponents(repo, group, version);
   if (components.length === 0) {
@@ -52,9 +52,9 @@ export function inspectArtifacts({ repo, group, version, expected = [] }) {
     } else {
       checks.push(check(`artifacts.${artifactId}.files`, 'pass', `${artifactId}: POM, main artifact, sources and javadoc present`));
     }
-    checks.push(unsigned.length
-      ? check(`artifacts.${artifactId}.signatures`, 'fail', `${artifactId}: ${unsigned.length} file(s) without .asc: ${unsigned.join(', ')}`, { fix: 'Signing did not run for these files (errors.md E06).' })
-      : check(`artifacts.${artifactId}.signatures`, 'pass', `${artifactId}: every file has a .asc signature`));
+    if (!unsigned.length) checks.push(check(`artifacts.${artifactId}.signatures`, 'pass', `${artifactId}: every file has a .asc signature`));
+    else if (unsignedExpected) checks.push(check(`artifacts.${artifactId}.signatures`, 'warn', `${artifactId}: ${unsigned.length} file(s) unsigned, as expected: signing runs in CI`));
+    else checks.push(check(`artifacts.${artifactId}.signatures`, 'fail', `${artifactId}: ${unsigned.length} file(s) without .asc: ${unsigned.join(', ')}`, { fix: 'Signing did not run for these files (errors.md E06).' }));
 
     const targets = moduleTargets(dir, artifactId, version);
     const missingTargets = targets.filter((t) => !present.has(t));
@@ -83,10 +83,10 @@ function expectedFromProject(projectDir, group) {
 }
 
 await runCli(import.meta.url, {
-  usage: 'Usage: inspect-artifacts.mjs --repo <dir> --group <groupId> --version <version> [--project <dir>] [--expect a,b,c]',
-  options: { repo: { type: 'string' }, group: { type: 'string' }, version: { type: 'string' }, project: { type: 'string' }, expect: { type: 'string' } },
+  usage: 'Usage: inspect-artifacts.mjs --repo <dir> --group <groupId> --version <version> [--project <dir>] [--expect a,b,c] [--unsigned-expected]',
+  options: { repo: { type: 'string' }, group: { type: 'string' }, version: { type: 'string' }, project: { type: 'string' }, expect: { type: 'string' }, 'unsigned-expected': { type: 'boolean', default: false } },
 }, (v) => {
   required(v, 'repo', 'group', 'version');
   const expected = v.expect ? v.expect.split(',').map((s) => s.trim()).filter(Boolean) : v.project ? expectedFromProject(v.project, v.group) : [];
-  return inspectArtifacts({ repo: v.repo, group: v.group, version: v.version, expected });
+  return inspectArtifacts({ repo: v.repo, group: v.group, version: v.version, expected, unsignedExpected: v['unsigned-expected'] });
 });

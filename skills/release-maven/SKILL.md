@@ -59,7 +59,7 @@ Settle two decisions before going on. Both appear as `warn` checks when they app
 1. **Release path** (`detect.releaseAutomation`). The project already publishes from CI. A local release would skip whatever else that workflow does (generated files, release assets, tags). Recommend `ci`: run phases 2 to 4 locally as checks, then trigger the workflow in phase 6. Use `local` only if the user chooses it.
 2. **Version strategy** (`detect.versionStrategy`). The committed version is a SNAPSHOT held in a Gradle property. Recommend `override`: leave the file alone and pass `-P<versionProperty>=<new>` to every Gradle command. The alternative is `file`: change the file in phase 3. With `override`, set `VERSION_ARG="-P<versionProperty>=<new>"`; otherwise `VERSION_ARG=""`.
 
-Save both: `state.mjs set releasePath=<ci|local> versionStrategy=<override|file> version=<new>`.
+In `manual` or `automatic` mode, save both: `state.mjs set releasePath=<ci|local> versionStrategy=<override|file> version=<new>`. In `check-only` mode, write no state at all, so that a later run does not mistake the check for a release in progress.
 
 ## Phase 2: Static pre-flight (no build)
 
@@ -98,7 +98,7 @@ node "$SKILL_DIR/../release-agent-shared/scripts/changelog.mjs" --version <new> 
 ./gradlew build $VERSION_ARG
 REPO="$PWD/build/release-agent/repo-$(date +%Y%m%d-%H%M%S)"
 ./gradlew publishToMavenLocal $VERSION_ARG -Dmaven.repo.local="$REPO" --no-configuration-cache
-node "$SKILL_DIR/../release-agent-shared/scripts/state.mjs" set stagingRepo="$REPO"
+node "$SKILL_DIR/../release-agent-shared/scripts/state.mjs" set stagingRepo="$REPO"   # not in check-only
 node "$SKILL_DIR/scripts/inspect-artifacts.mjs" --repo "$REPO" --group <g> --version <v> --project .
 node "$SKILL_DIR/scripts/validate-pom.mjs" --repo "$REPO" --version <v>
 node "$SKILL_DIR/scripts/verify-signatures.mjs" --repo "$REPO" --version <v>
@@ -109,7 +109,12 @@ node "$SKILL_DIR/scripts/verify-signatures.mjs" --repo "$REPO" --version <v>
 - If the project already runs a narrower verification in CI (see the release workflow), prefer those tasks over `build`, which can be slow for KMP.
 - `inspect-artifacts.mjs` checks for a POM, main artifact, `-sources.jar`, `-javadoc.jar` and a `.asc` for each file. It also checks that every artifact expected from the build files is staged, and that every target referenced by a KMP root `.module` file is present.
 - `verify-signatures.mjs` checks every `.asc`, verifies with `gpg` when installed, and checks that the public key is on a supported keyserver.
-- If signing is skipped locally because the keys only exist in CI, `inspect-artifacts.mjs` and `verify-signatures.mjs` report missing `.asc` files. With release path `ci` that is expected; report it as such, not as a blocker.
+- **Keys only in CI.** When `check-credentials.mjs` found no signing setup and the release path is `ci` (or the mode is `check-only`), `publishToMavenLocal` fails with "no configured signatory" (errors.md E11). Stage without signing instead, and tell the user the staged files are unsigned on purpose:
+  ```sh
+  ./gradlew publishToMavenLocal $VERSION_ARG -Dmaven.repo.local="$REPO" --no-configuration-cache \
+    --init-script "$SKILL_DIR/scripts/skip-signing.init.gradle.kts"
+  ```
+  Then pass `--unsigned-expected` to `inspect-artifacts.mjs` and `verify-signatures.mjs`, so missing `.asc` files are reported as `warn`. POMs, sources, javadoc and KMP targets are still fully checked. Never use the init script or the flag with release path `local` or with any upload command.
 - In `check-only` mode, stop here and print a go/no-go table: one row per check, with the fix for every failure.
 
 ## Phase 5: Gate 1 (before upload)

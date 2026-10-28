@@ -117,7 +117,8 @@ Each entry gives the cause, the fix, and the phase to rerun from. Propose the fi
 
 - **Match:** `Cannot perform signing task ... because it has no configured signatory`
 - **Cause:** Signing is required, but Gradle found none of the signing properties.
-- **Fix:** Configure one of the three setups in `reference/signing-setup.md`. Check the property names with `check-credentials.mjs`. With environment variables, confirm they are exported in the shell that runs Gradle and that the Gradle daemon was started after they were set (`./gradlew --stop` restarts it).
+- **Fix:** Configure one of the three setups in `reference/signing-setup.md`. Check the property names with `check-credentials.mjs`. If it reports `gpgInstalled: false`, use the in-memory key: it is the only setup that works without `gpg`.
+- **Check-only with keys only in CI:** this error is expected on a machine without keys. Stage with `--init-script "$SKILL_DIR/scripts/skip-signing.init.gradle.kts"` and pass `--unsigned-expected` to the checks (SKILL.md, Phase 4). With environment variables, confirm they are exported in the shell that runs Gradle and that the Gradle daemon was started after they were set (`./gradlew --stop` restarts it).
 - **Rerun from:** Phase 4
 
 ## E12 Cannot read the signing key
