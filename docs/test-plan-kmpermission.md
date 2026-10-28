@@ -82,7 +82,7 @@ Expected:
 | Version | not on Central; latest 0.3.0; `warn` that 0.4.0-alpha01 sorts below 0.4.0-SNAPSHOT (expected for a pre-release) |
 | Credentials | `pass` for the keys you have locally. With the `ci` path, missing local keys are reported as expected rather than blocking |
 | Build | `./gradlew build -PVERSION_NAME=0.4.0-alpha01` succeeds |
-| Staging | `publishToMavenLocal -PVERSION_NAME=0.4.0-alpha01 -Dmaven.repo.local=build/release-agent/repo-<time>` |
+| Staging | `publishToMavenLocal -PVERSION_NAME=0.4.0-alpha01 -Dmaven.repo.local=build/release-agent/repo-<time>`. Without local signing keys, the skill adds `--init-script skip-signing.init.gradle.kts` and reports the unsigned files as expected |
 | Artifacts | 8 components, each with POM, main artifact, sources, javadoc and `.asc` files |
 | POM | all required fields present (name and description come from each module's `pom {}` block, the rest from `gradle.properties`) |
 | Signatures | present; `gpg` verifies them; your key found on a keyserver |

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `skip-signing.init.gradle.kts` and an `--unsigned-expected` flag for `inspect-artifacts.mjs` and `verify-signatures.mjs`, so check-only runs work on machines without signing keys when the keys live in CI. Missing signatures are then reported as warnings while POMs, sources, javadoc and KMP targets are still checked.
+
+### Changed
+
+- `check-credentials.mjs` reports whether gpg is installed and, without gpg, recommends the in-memory key setup.
+
+### Fixed
+
+- Check-only mode no longer writes `build/release-agent/state.json`, so a later run does not mistake a check for a release in progress.
+
 ## [0.1.0] - 2026-10-28
 
 ### Added
