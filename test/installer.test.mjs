@@ -8,7 +8,7 @@ import { installSkills, availableSkills, packageVersion } from '../src/installer
 import { resolveTarget } from '../src/installer/targets.mjs';
 import { tempDir } from './support/helpers.mjs';
 
-const BIN = fileURLToPath(new URL('../bin/release-agent-skills.mjs', import.meta.url));
+const BIN = fileURLToPath(new URL('../cli/release-agent-skills.mjs', import.meta.url));
 
 test('availableSkills lists skills with SKILL.md only', () => {
   const names = availableSkills().map((s) => s.name);
