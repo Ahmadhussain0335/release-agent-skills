@@ -182,4 +182,54 @@ Pass: `0.4.0` is on Maven Central for both modules, there is exactly one `v0.4.0
 
 ## Results to collect
 
-For each test, note pass or fail, the agent's exact wording at both gates, anything the agent guessed instead of reading from a script, and any secret that appeared in output (there should be none). Problems found here become issues and tests before 0.1.0 is published to npm.
+For each test, note pass or fail, the agent's exact wording at both gates, anything the agent guessed instead of reading from a script, and any secret that appeared in output (there should be none). Problems found here become issues and tests before the next release.
+
+## Results: 2026-10-28
+
+First run, on KMPermission `main` at `9a317c9`, macOS with Xcode 16.3, JDK 17 as the default JDK, Node.js 20.20.2. The skill was installed from npm with `--user`. Tests 1 to 4 ran on 0.1.0; test 3 was repeated on 0.1.1 after the fixes below.
+
+| Test | Result | Notes |
+|---|---|---|
+| 1. Installation | Pass | Both folders installed into `~/.claude/skills`; the second run skipped them as `version 0.1.0 already installed`. Claude Code listed `release-maven` immediately. Upgrading with `install --user --force` to 0.1.1 overwrote both folders |
+| 2. Skill triggering | Pass | The skill loaded, picked `check-only` from "is it ready", and used the target version from the request |
+| 3. Check-only run | Pass on 0.1.1 (failed on 0.1.0, see findings) | Details below |
+| 4. Error library drills | Pass | `check-version` on 0.3.0 failed both Central checks and pointed to E03. `validate-pom` on a copy without `<developers>` reported `missing developers` and pointed to E08. No fix was applied |
+| 5. Local upload, ending with Drop | Skipped | This Mac has no Portal token and no signing key; both exist only as GitHub secrets. Skipped by choice rather than adding local credentials |
+| 6. Resume | Skipped | Depends on test 5 |
+| 7. Real release through CI | Not run | To be done with the 0.4.0 release |
+
+Test 3 in detail:
+
+| Phase | Result |
+|---|---|
+| Detect | 2 modules, 8 expected artifacts, vanniktech 0.37.0, no automatic release. `warn` for `publish.yml` and for the SNAPSHOT version strategy, as expected. Decisions taken from this plan: release path `ci`, strategy `override` |
+| Git | All `pass`: clean, on `main`, in sync with origin, tag `v0.4.0-alpha01` free locally and on origin |
+| Version | Not on Central for either module; latest 0.3.0. `warn` that 0.4.0-alpha01 sorts below 0.4.0-SNAPSHOT (expected for a pre-release) |
+| Credentials | `fail` for the Portal token and signing, with `gpg is not installed` (0.1.1). Expected for the `ci` path |
+| Build | The release workflow's verify tasks with `-PVERSION_NAME=0.4.0-alpha01`: `BUILD SUCCESSFUL` in 1 min 38 s |
+| Staging | 0.1.0: failed at `signAndroidPublication` with "no configured signatory" (E11). 0.1.1: succeeded with `--init-script skip-signing.init.gradle.kts` |
+| Artifacts | 8 of 8 components staged, each with POM, main artifact (`.aar`, `.klib`, `.jar`), sources and javadoc; 48 files. KMP extras (`kotlin_resources.zip`, `kotlin-tooling-metadata.json`, `metadata.jar`) handled correctly |
+| POMs | 8 of 8 complete, all at `0.4.0-alpha01`, so `-PVERSION_NAME` reached every module |
+| Signatures | 48 of 48 unsigned on purpose. 0.1.0 reported this as `fail`; 0.1.1 with `--unsigned-expected` reports `warn` |
+| Side effects | `git status` clean; no `state.json` written (0.1.1); nothing uploaded |
+
+No secret appeared in any output.
+
+### Findings, fixed in 0.1.1
+
+1. Check-only mode wrote `state.json`, so a later run could take a check for a release in progress.
+2. Check-only staging stopped at the first signing task when the signing keys exist only in CI. Fixed with `skip-signing.init.gradle.kts`.
+3. Expected missing signatures were reported as `fail`. Fixed with `--unsigned-expected` on `inspect-artifacts.mjs` and `verify-signatures.mjs`.
+4. No guidance for machines without `gpg`. `check-credentials.mjs` now reports `gpgInstalled` and recommends the in-memory key.
+
+Earlier, a static run of `detect-project.mjs` on a clone (before 0.1.0 was published) had already led to fixes for:
+- the AGP 9 `kotlin { android {} }` target
+- `coordinates(artifactId = ...)` with a named argument
+- the SNAPSHOT version strategy
+- CI workflow detection
+- the changelog heading style
+- builds that enable automatic release
+
+### Not yet verified against the real Portal
+
+The live upload, the capture of the deployment ID from the Gradle log, validation polling (`portal.mjs status --wait`), Gate 2, and drop or publish. These are covered by mocked tests only. Test 7 will be the first real run.
