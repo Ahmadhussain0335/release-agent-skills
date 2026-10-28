@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Maven Central publishing of the skill files as `io.github.ahmadhussain0335:release-agent-skills`: `tools/maven/build.mjs` builds the POM and jars, and the `Maven Central` workflow signs, checks and uploads them with this package's own scripts as a manually released deployment.
+
 - Claude Code plugin and marketplace manifests (`.claude-plugin/`), so the skills install with `/plugin install release-agent-skills --marketplace Ahmadhussain0335/release-agent-skills`.
 
 ### Changed

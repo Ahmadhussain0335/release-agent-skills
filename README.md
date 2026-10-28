@@ -65,6 +65,10 @@ On Claude Code versions before 2.1.275, add the marketplace first:
 
 The skill then runs as `/release-agent-skills:release-maven`, and Claude also picks it up from requests such as "publish mylib 1.0.2 to Maven Central". Use either the plugin or the npm installer, not both, or Claude Code sees the skill twice.
 
+### Maven Central
+
+The same skill files are also published to Maven Central as `io.github.ahmadhussain0335:release-agent-skills`, for teams that mirror Central or want a signed copy of each release. The jar contains the `skills/` folder; copy it into your agent's skills directory. The npm installer and the Claude Code plugin remain the easiest ways to install.
+
 ### Other tools and locations
 
 ```sh
