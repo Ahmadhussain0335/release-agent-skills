@@ -4,7 +4,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { installSkills, availableSkills } from '../src/installer/install.mjs';
+import { installSkills, availableSkills, packageVersion } from '../src/installer/install.mjs';
 import { resolveTarget } from '../src/installer/targets.mjs';
 import { tempDir } from './support/helpers.mjs';
 
@@ -36,7 +36,7 @@ test('install skips existing folders unless --force, and never removes files', (
   writeFileSync(extra, 'keep me');
   const skipped = installSkills({ destDir: dest });
   assert.ok(skipped.every((r) => r.action === 'skipped'));
-  assert.match(skipped[0].reason, /version 0\.1\.0 already installed/);
+  assert.equal(skipped[0].reason, `version ${packageVersion()} already installed`);
   const forced = installSkills({ destDir: dest, force: true });
   assert.ok(forced.every((r) => r.action === 'overwritten'));
   assert.equal(readFileSync(extra, 'utf8'), 'keep me');
