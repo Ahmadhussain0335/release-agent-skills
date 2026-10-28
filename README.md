@@ -48,6 +48,23 @@ That runs the checks only and changes nothing. When everything passes:
 > publish mylib 1.0.2 to Maven Central
 ```
 
+### Claude Code plugin
+
+Instead of the npm installer, Claude Code users can install the skills as a plugin from this repository's marketplace. The plugin updates with each release.
+
+```
+/plugin install release-agent-skills --marketplace Ahmadhussain0335/release-agent-skills
+```
+
+On Claude Code versions before 2.1.275, add the marketplace first:
+
+```
+/plugin marketplace add Ahmadhussain0335/release-agent-skills
+/plugin install release-agent-skills@release-agent
+```
+
+The skill then runs as `/release-agent-skills:release-maven`, and Claude also picks it up from requests such as "publish mylib 1.0.2 to Maven Central". Use either the plugin or the npm installer, not both, or Claude Code sees the skill twice.
+
 ### Other tools and locations
 
 ```sh

@@ -1,0 +1,16 @@
+{
+  "name": "release-agent",
+  "description": "Agent skills that publish libraries safely",
+  "owner": {
+    "name": "Ahmad Hussain",
+    "email": "ahmadhussain0335@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "release-agent-skills",
+      "source": "./",
+      "description": "Publish JVM, Android and Kotlin Multiplatform libraries to Maven Central with pre-flight checks, approval gates and manual release by default",
+      "category": "development"
+    }
+  ]
+}

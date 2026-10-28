@@ -1,0 +1,15 @@
+{
+  "name": "release-agent-skills",
+  "displayName": "Release Agent Skills",
+  "version": "0.1.2",
+  "description": "Publishes libraries safely. Maven Central through the Sonatype Central Portal for JVM, Android and Kotlin Multiplatform, with pre-flight checks, approval gates and manual release by default.",
+  "author": {
+    "name": "Ahmad Hussain",
+    "email": "ahmadhussain0335@gmail.com",
+    "url": "https://github.com/Ahmadhussain0335"
+  },
+  "homepage": "https://github.com/Ahmadhussain0335/release-agent-skills#readme",
+  "repository": "https://github.com/Ahmadhussain0335/release-agent-skills",
+  "license": "MIT",
+  "keywords": ["release", "maven-central", "sonatype", "central-portal", "gradle", "kotlin-multiplatform", "android", "publishing"]
+}

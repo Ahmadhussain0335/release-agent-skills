@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Claude Code plugin and marketplace manifests (`.claude-plugin/`), so the skills install with `/plugin install release-agent-skills --marketplace Ahmadhussain0335/release-agent-skills`.
+
+### Changed
+
+- The npm installer moved from `bin/` to `cli/`, because Claude Code puts a plugin's `bin/` on the `PATH`. The `npx release-agent-skills` command is unchanged.
+
 ## [0.1.2] - 2026-10-28
 
 ### Added
